@@ -15,7 +15,7 @@ function changeColor() {
 function startColorSwitching() {
     startButton.disabled = true; 
     stopButton.disabled = false;
-  intervalId = setInterval(changeColor, 1000); // Запускаємо зміну кольору кожну секунду
+  intervalId = setInterval(changeColor, 1000); // функція зміни кольору кожну секунду
 }
 
 

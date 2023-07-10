@@ -1,17 +1,17 @@
-import flatpickr from "flatpickr";
-import "flatpickr/dist/flatpickr.min.css";
-import Notiflix from 'notiflix';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+import { Report } from 'notiflix/build/notiflix-report-aio';
 
-const datetimePicker = document.getElementById("datetime-picker");
-const startButton = document.querySelector("[data-start]");
-const daysValue = document.querySelector("[data-days]");
-const hoursValue = document.querySelector("[data-hours]");
-const minutesValue = document.querySelector("[data-minutes]");
-const secondsValue = document.querySelector("[data-seconds]");
+const datePicker = document.getElementById('datetime-picker');
+const startButton = document.querySelector('[data-start]');
+const daysElement = document.querySelector('[data-days]');
+const hoursElement = document.querySelector('[data-hours]');
+const minutesElement = document.querySelector('[data-minutes]');
+const secondsElement = document.querySelector('[data-seconds]');
 
-let countdownIntervalId;
+let countdownInterval;
 
-flatpickr(datetimePicker, {
+const options = {
   enableTime: true,
   time_24hr: true,
   defaultDate: new Date(),
@@ -20,40 +20,65 @@ flatpickr(datetimePicker, {
     const selectedDate = selectedDates[0];
 
     if (selectedDate < new Date()) {
-      Notiflix.Notify.warning("Please choose a date in the future");
+      Report.failure('Please choose a date in the future');
       startButton.disabled = true;
     } else {
       startButton.disabled = false;
     }
   },
-});
+};
 
-startButton.addEventListener("click", () => {
-  const selectedDate = flatpickr.parseDate(datetimePicker.value);
-  const currentTime = new Date().getTime();
-  const targetTime = selectedDate.getTime();
-  const timeDifference = targetTime - currentTime;
+flatpickr(datePicker, options);
 
-  if (timeDifference <= 0) {
-    Notiflix.Notify.warning("Please choose a date in the future");
+startButton.disabled = true;
+
+startButton.addEventListener('click', startCountdown);
+
+function startCountdown() {
+  const selectedDate = new Date(datePicker.value);
+  const currentDate = new Date();
+
+  const timeRemaining = selectedDate - currentDate;
+
+  if (timeRemaining <= 0) {
     return;
   }
 
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(updateCountdown, 1000);
+
+  updateCountdown();
   startButton.disabled = true;
+  datePicker.disabled = true; 
+}
 
-  countdownIntervalId = setInterval(() => {
-    const remainingTime = convertMs(timeDifference);
-    renderTime(remainingTime);
+function updateCountdown() {
+  const selectedDate = new Date(datePicker.value);
+  const currentDate = new Date();
+  const timeRemaining = selectedDate - currentDate;
 
-    timeDifference -= 1000;
+  if (timeRemaining <= 0) {
+    clearInterval(countdownInterval);
+    resetCountdown();
+    return;
+  }
 
-    if (timeDifference <= 0) {
-      clearInterval(countdownIntervalId);
-      Notiflix.Notify.success("Countdown completed");
-      startButton.disabled = false;
-    }
-  }, 1000);
-});
+  const { days, hours, minutes, seconds } = convertMs(timeRemaining);
+
+  daysElement.textContent = addLeadingZero(days);
+  hoursElement.textContent = addLeadingZero(hours);
+  minutesElement.textContent = addLeadingZero(minutes);
+  secondsElement.textContent = addLeadingZero(seconds);
+}
+
+function resetCountdown() {
+  daysElement.textContent = '00';
+  hoursElement.textContent = '00';
+  minutesElement.textContent = '00';
+  secondsElement.textContent = '00';
+  startButton.disabled = false;
+  datePicker.disabled = false;
+}
 
 function convertMs(ms) {
   const second = 1000;
@@ -69,13 +94,6 @@ function convertMs(ms) {
   return { days, hours, minutes, seconds };
 }
 
-function renderTime(time) {
-  daysValue.textContent = addLeadingZero(time.days);
-  hoursValue.textContent = addLeadingZero(time.hours);
-  minutesValue.textContent = addLeadingZero(time.minutes);
-  secondsValue.textContent = addLeadingZero(time.seconds);
-}
-
 function addLeadingZero(value) {
-  return value.toString().padStart(2, "0");
+  return value.toString().padStart(2, '0');
 }
